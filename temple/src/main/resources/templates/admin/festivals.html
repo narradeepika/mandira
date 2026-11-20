@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Festivals')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <div class="head-row"><h1>Festivals</h1><a class="btn" th:href="@{/admin/festivals/new}">+ Add festival</a></div>
+    <div class="alert alert-ok" th:if="${msg}" th:text="${msg}"></div>
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>Description</th><th>Visible</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="f : ${items}">
+          <td th:text="${f.sortOrder}"></td>
+          <td><b th:text="${f.name}"></b></td>
+          <td th:text="${f.description}"></td>
+          <td th:text="${f.active} ? 'Yes' : 'No'"></td>
+          <td class="row-actions">
+            <a th:href="@{/admin/festivals/{id}/edit(id=${f.id})}">Edit</a>
+            <form th:action="@{/admin/festivals/{id}/delete(id=${f.id})}" method="post" onsubmit="return confirm('Delete this festival?');">
+              <button class="link-danger" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+</body>
+</html>

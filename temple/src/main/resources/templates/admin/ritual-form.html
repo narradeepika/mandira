@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Ritual')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1 th:text="${ritual.id == null} ? 'Add ritual' : 'Edit ritual'">Ritual</h1>
+    <form th:action="@{/admin/rituals/save}" th:object="${ritual}" method="post" class="card form">
+      <input type="hidden" th:field="*{id}">
+      <label>Time (e.g. 04:30–05:00 AM)<input type="text" th:field="*{timeLabel}" maxlength="60" required>
+        <span class="err" th:if="${#fields.hasErrors('timeLabel')}" th:errors="*{timeLabel}"></span></label>
+      <label>Ritual name<input type="text" th:field="*{name}" maxlength="120" required>
+        <span class="err" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span></label>
+      <label>Description<input type="text" th:field="*{description}" maxlength="255"></label>
+      <label>Access
+        <select th:field="*{access}"><option th:each="a : ${accesses}" th:value="${a}" th:text="${a}"></option></select></label>
+      <label>Display order<input type="number" th:field="*{sortOrder}"></label>
+      <label class="check"><input type="checkbox" th:field="*{active}"> Show on website</label>
+      <div class="actions"><button class="btn" type="submit">Save</button><a class="btn btn-ghost" th:href="@{/admin/rituals}">Cancel</a></div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

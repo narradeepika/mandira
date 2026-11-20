@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Enquiry')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Enquiry #<span th:text="${e.id}"></span></h1>
+    <div class="alert alert-ok" th:if="${msg}" th:text="${msg}"></div>
+    <div class="card">
+      <dl>
+        <dt>Received</dt><dd th:text="${#temporals.format(e.createdAt, 'dd MMM yyyy HH:mm')}"></dd>
+        <dt>Name</dt><dd th:text="${e.name}"></dd>
+        <dt>Email</dt><dd><a th:href="'mailto:' + ${e.email}" th:text="${e.email}"></a></dd>
+        <dt>Phone</dt><dd th:text="${e.phone != null and !e.phone.isEmpty()} ? ${e.phone} : '—'"></dd>
+        <dt>Subject</dt><dd th:text="${e.subject}"></dd>
+        <dt>Message</dt><dd class="msg" th:text="${e.message}"></dd>
+        <dt>Status</dt><dd><span class="pill" th:classappend="${e.resolved} ? 'pill-ok' : 'pill-open'" th:text="${e.resolved} ? 'Resolved' : 'Open'"></span></dd>
+      </dl>
+      <div class="actions">
+        <form th:action="@{/admin/enquiries/{id}/toggle(id=${e.id})}" method="post">
+          <button class="btn" type="submit" th:text="${e.resolved} ? 'Mark as open' : 'Mark as resolved'"></button>
+        </form>
+        <form th:action="@{/admin/enquiries/{id}/delete(id=${e.id})}" method="post" onsubmit="return confirm('Delete this enquiry permanently?');">
+          <button class="btn btn-danger" type="submit">Delete</button>
+        </form>
+        <a class="btn btn-ghost" th:href="@{/admin/enquiries}">← Back</a>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

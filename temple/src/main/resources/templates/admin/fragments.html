@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <title th:text="${title} + ' | Temple Admin'">Temple Admin</title>
+  <link rel="stylesheet" th:href="@{/admin.css}">
+</head>
+<body>
+<aside th:fragment="sidebar" class="sidebar">
+  <div class="sidebar-brand">🕉 Dhabaleswara<br><small>Admin Panel</small></div>
+  <nav>
+    <a th:href="@{/admin}" th:classappend="${active == 'dashboard'} ? 'on'">Dashboard</a>
+    <a th:href="@{/admin/enquiries}" th:classappend="${active == 'enquiries'} ? 'on'">Enquiries</a>
+    <a th:href="@{/admin/rituals}" th:classappend="${active == 'rituals'} ? 'on'">Daily Rituals</a>
+    <a th:href="@{/admin/festivals}" th:classappend="${active == 'festivals'} ? 'on'">Festivals</a>
+    <a th:href="@{/admin/password}" th:classappend="${active == 'password'} ? 'on'">Change Password</a>
+    <a th:href="@{/}" target="_blank" rel="noopener">View Website ↗</a>
+  </nav>
+  <form th:action="@{/logout}" method="post" class="logout">
+    <div class="who" sec:authentication="name">admin</div>
+    <button type="submit" class="btn btn-ghost">Log out</button>
+  </form>
+</aside>
+</body>
+</html>

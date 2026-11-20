@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Daily Rituals')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <div class="head-row"><h1>Daily Rituals</h1><a class="btn" th:href="@{/admin/rituals/new}">+ Add ritual</a></div>
+    <div class="alert alert-ok" th:if="${msg}" th:text="${msg}"></div>
+    <table>
+      <thead><tr><th>#</th><th>Time</th><th>Ritual</th><th>Access</th><th>Visible</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="r : ${items}">
+          <td th:text="${r.sortOrder}"></td>
+          <td th:text="${r.timeLabel}"></td>
+          <td><b th:text="${r.name}"></b><br><small class="muted" th:text="${r.description}"></small></td>
+          <td th:text="${r.access}"></td>
+          <td th:text="${r.active} ? 'Yes' : 'No'"></td>
+          <td class="row-actions">
+            <a th:href="@{/admin/rituals/{id}/edit(id=${r.id})}">Edit</a>
+            <form th:action="@{/admin/rituals/{id}/delete(id=${r.id})}" method="post" onsubmit="return confirm('Delete this ritual?');">
+              <button class="link-danger" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+</body>
+</html>

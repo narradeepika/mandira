@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Dashboard')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1>Dashboard</h1>
+    <div class="alert alert-ok" th:if="${msg}" th:text="${msg}"></div>
+    <div class="stats">
+      <div class="stat"><span th:text="${total}">0</span><small>Total enquiries</small></div>
+      <div class="stat warn"><span th:text="${open}">0</span><small>Open</small></div>
+      <div class="stat good"><span th:text="${resolved}">0</span><small>Resolved</small></div>
+      <div class="stat"><span th:text="${rituals}">0</span><small>Rituals</small></div>
+      <div class="stat"><span th:text="${festivals}">0</span><small>Festivals</small></div>
+    </div>
+    <h2>Latest enquiries</h2>
+    <table>
+      <thead><tr><th>Date</th><th>Name</th><th>Subject</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="e : ${latest}">
+          <td th:text="${#temporals.format(e.createdAt, 'dd MMM yyyy HH:mm')}"></td>
+          <td th:text="${e.name}"></td>
+          <td th:text="${e.subject}"></td>
+          <td><span class="pill" th:classappend="${e.resolved} ? 'pill-ok' : 'pill-open'" th:text="${e.resolved} ? 'Resolved' : 'Open'"></span></td>
+          <td><a th:href="@{/admin/enquiries/{id}(id=${e.id})}">View</a></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(latest)}"><td colspan="5" class="muted">No enquiries yet.</td></tr>
+      </tbody>
+    </table>
+  </main>
+</div>
+</body>
+</html>

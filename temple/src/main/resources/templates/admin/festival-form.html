@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Festival')}"></head>
+<body>
+<div class="layout">
+  <aside th:replace="~{admin/fragments :: sidebar}"></aside>
+  <main class="content">
+    <h1 th:text="${festival.id == null} ? 'Add festival' : 'Edit festival'">Festival</h1>
+    <form th:action="@{/admin/festivals/save}" th:object="${festival}" method="post" class="card form">
+      <input type="hidden" th:field="*{id}">
+      <label>Name<input type="text" th:field="*{name}" maxlength="120" required>
+        <span class="err" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span></label>
+      <label>Description<textarea th:field="*{description}" rows="3" maxlength="500" required></textarea>
+        <span class="err" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></span></label>
+      <label>Icon (Iconify name, e.g. lucide:flame)<input type="text" th:field="*{icon}" maxlength="60"></label>
+      <label>Display order<input type="number" th:field="*{sortOrder}"></label>
+      <label class="check"><input type="checkbox" th:field="*{active}"> Show on website</label>
+      <div class="actions"><button class="btn" type="submit">Save</button><a class="btn btn-ghost" th:href="@{/admin/festivals}">Cancel</a></div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

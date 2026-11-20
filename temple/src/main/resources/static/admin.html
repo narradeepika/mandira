@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin | Dhabaleswar Mandira</title>
+<style>
+  :root { --primary:#8b4513; --secondary:#d97706; --cream:#fff8e7; --bg:#fffdf8; --text:#2d2118; --muted:#74675c; --border:#eadbc5; --ok:#28652c; --bad:#9b3b12; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  h1 { font-size:20px; } h2 { font-size:20px; color:var(--primary); }
+  .muted { color:var(--muted); font-size:14px; }
+  .top { background:var(--primary); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .top > div { display:flex; gap:14px; align-items:center; }
+  .link { color:var(--secondary); text-decoration:underline; }
+  .top .link { color:#f4c542; }
+  .wrap { width:min(1150px,94%); margin:22px auto 60px; }
+  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .tab { padding:10px 16px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; font-weight:bold; color:var(--primary); }
+  .tab.active { background:var(--secondary); border-color:var(--secondary); color:#fff; }
+  .btn { padding:10px 18px; border-radius:6px; border:2px solid var(--secondary); background:var(--secondary); color:#fff; font-weight:bold; cursor:pointer; font-size:14px; }
+  .btn:hover { background:var(--primary); border-color:var(--primary); }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .btn.small { padding:5px 10px; font-size:12px; }
+  .btn.outline { background:transparent; color:var(--primary); border-color:var(--primary); }
+  .btn.outline:hover { background:var(--primary); color:#fff; }
+  .btn.danger { background:var(--bad); border-color:var(--bad); }
+  .top .btn.outline { color:#fff; border-color:#fff; }
+  .card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:22px; box-shadow:0 8px 25px rgba(80,45,15,.08); }
+  .login { width:min(380px,92%); margin:12vh auto 0; display:grid; gap:12px; }
+  .login h1 { color:var(--primary); }
+  input, textarea, select { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:6px; font:inherit; background:#fff; }
+  input:focus, textarea:focus, select:focus { outline:none; border-color:var(--secondary); }
+  input[type=checkbox] { width:auto; }
+  .msg.error, .flash.error { color:var(--bad); }
+  .flash { min-height:22px; margin-bottom:10px; font-weight:bold; color:var(--ok); }
+  .bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:10px; }
+  .tablewrap { overflow-x:auto; background:#fff; border:1px solid var(--border); border-radius:12px; }
+  table { width:100%; border-collapse:collapse; min-width:700px; }
+  th, td { padding:11px 13px; text-align:left; border-bottom:1px solid var(--border); font-size:14px; vertical-align:top; }
+  th { background:var(--cream); color:var(--primary); }
+  tr:last-child td { border-bottom:none; }
+  .pre { white-space:pre-wrap; word-break:break-word; max-width:380px; }
+  .pill { display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:bold; }
+  .pill.ok { background:#e1f4df; color:var(--ok); } .pill.new { background:#ffe7d5; color:var(--bad); }
+  .actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .pager { display:flex; gap:12px; align-items:center; margin-top:14px; }
+  form.edit { display:grid; gap:12px; margin-bottom:18px; }
+  form.edit label { display:grid; gap:4px; font-size:13px; font-weight:bold; color:var(--primary); }
+  form.edit label.inline { display:flex; align-items:center; gap:8px; }
+  .formbtns { display:flex; gap:10px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  'use strict';
+
+  var app = document.getElementById('app');
+  var token = null;
+  try { token = sessionStorage.getItem('adminToken'); } catch (e) {}
+
+  /* ---------- helpers ---------- */
+  var PROPS = ['value', 'checked', 'disabled', 'required', 'type', 'href', 'rows', 'min', 'maxLength'];
+  function el(tag, props, children) {
+    var n = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (k) {
+      var v = props[k];
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;           // textContent only: no HTML injection
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v);
+      else if (PROPS.indexOf(k) >= 0) n[k] = v;
+      else n.setAttribute(k, v);
+    });
+    (children || []).forEach(function (c) {
+      n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    });
+    return n;
+  }
+  function fmt(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+  function yes(b) { return b ? 'Yes' : 'No'; }
+  function trunc(s, n) { s = s || ''; return s.length > n ? s.slice(0, n) + '…' : s; }
+  function errMsg(d) {
+    if (d && d.details) { var k = Object.keys(d.details)[0]; return k + ': ' + d.details[k]; }
+    return (d && d.error) || 'Request failed.';
+  }
+
+  function api(method, path, body) {
+    var opts = { method: method, headers: {} };
+    if (token) opts.headers.Authorization = 'Bearer ' + token;
+    if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    return fetch(path, opts).then(function (r) {
+      if (r.status === 401 || r.status === 403) { logout(true); throw new Error('Session expired. Please log in again.'); }
+      if (r.status === 204) return null;
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(errMsg(d));
+        return d;
+      });
+    });
+  }
+
+  /* ---------- login / logout ---------- */
+  function logout(expired) {
+    token = null;
+    try { sessionStorage.removeItem('adminToken'); } catch (e) {}
+    showLogin(expired ? 'Session expired. Please log in again.' : '');
+  }
+
+  function showLogin(msg) {
+    var user = el('input', { type: 'text', placeholder: 'Username', autocomplete: 'username', required: true });
+    var pass = el('input', { type: 'password', placeholder: 'Password', autocomplete: 'current-password', required: true });
+    var err = el('p', { class: 'msg error', text: msg || '' });
+    var btn = el('button', { class: 'btn', type: 'submit', text: 'Log in' });
+    var form = el('form', { class: 'card login', onsubmit: function (e) {
+      e.preventDefault();
+      btn.disabled = true; err.textContent = '';
+      fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user.value, password: pass.value })
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, status: r.status, d: d }; }); })
+        .then(function (res) {
+          if (res.ok) {
+            token = res.d.token;
+            try { sessionStorage.setItem('adminToken', token); } catch (e) {}
+            showDashboard();
+          } else if (res.status === 429) err.textContent = 'Too many attempts. Please try again later.';
+          else if (res.status === 401) err.textContent = 'Invalid username or password.';
+          else err.textContent = errMsg(res.d);
+        })
+        .catch(function () { err.textContent = 'Cannot reach the server.'; })
+        .then(function () { btn.disabled = false; });
+    } }, [el('h1', { text: 'Admin Login' }), el('p', { class: 'muted', text: 'Dhabaleswar Mandira' }), user, pass, btn, err]);
+    app.replaceChildren(form);
+  }
+
+  /* ---------- dashboard shell ---------- */
+  var TABS = [['messages', 'Messages'], ['schedules', 'Schedule'], ['announcements', 'Announcements'], ['events', 'Events'], ['content', 'Site Content']];
+  var current = 'messages', badge = 0, flashEl, contentEl, tabsEl;
+
+  function flash(msg, isErr) { flashEl.textContent = msg || ''; flashEl.className = 'flash' + (isErr ? ' error' : ''); }
+  function showErr(e) { flash(e.message, true); }
+
+  function renderTabs() {
+    tabsEl.replaceChildren.apply(tabsEl, TABS.map(function (t) {
+      var label = t[1] + (t[0] === 'messages' && badge ? ' (' + badge + ' new)' : '');
+      return el('button', { class: 'tab' + (t[0] === current ? ' active' : ''), text: label, onclick: function () { openTab(t[0]); } });
+    }));
+  }
+  function refreshBadge() {
+    api('GET', '/api/admin/messages/unreviewed-count').then(function (d) { badge = d.count; renderTabs(); }).catch(function () {});
+  }
+  function openTab(key) {
+    current = key; flash(''); renderTabs(); contentEl.replaceChildren();
+    if (key === 'messages') viewMessages(0);
+    else if (key === 'content') viewContent();
+    else viewCrud(key);
+  }
+
+  function showDashboard() {
+    flashEl = el('div', { class: 'flash', 'aria-live': 'polite' });
+    contentEl = el('div');
+    tabsEl = el('nav', { class: 'tabs' });
+    var header = el('header', { class: 'top' }, [
+      el('h1', { text: 'Dhabaleswar Mandira · Admin' }),
+      el('div', {}, [
+        el('a', { class: 'link', href: '/', target: '_blank', text: 'View site' }),
+        el('button', { class: 'btn small outline', text: 'Log out', onclick: function () { logout(false); } })
+      ])
+    ]);
+    app.replaceChildren(header, el('main', { class: 'wrap' }, [tabsEl, flashEl, contentEl]));
+    openTab(current); refreshBadge();
+  }
+
+  function table(headers, rows) {
+    var thead = el('thead', {}, [el('tr', {}, headers.map(function (h) { return el('th', { text: h }); }))]);
+    var tbody = el('tbody', {}, rows.map(function (r) {
+      return el('tr', {}, r.map(function (c) { return el('td', {}, [c]); }));
+    }));
+    return el('div', { class: 'tablewrap' }, [el('table', {}, [thead, tbody])]);
+  }
+  function empty() { return el('p', { class: 'muted', text: 'Nothing here yet.' }); }
+
+  /* ---------- contact messages ---------- */
+  function viewMessages(page) {
+    api('GET', '/api/admin/messages?page=' + page + '&size=15').then(function (data) {
+      var rows = data.content.map(function (m) {
+        var toggle = el('button', { class: 'btn small outline', text: m.reviewed ? 'Mark unread' : 'Mark reviewed', onclick: function () {
+          api('PUT', '/api/admin/messages/' + m.id + '/reviewed', { reviewed: !m.reviewed })
+            .then(function () { viewMessages(page); refreshBadge(); }).catch(showErr);
+        } });
+        var del = el('button', { class: 'btn small danger', text: 'Delete', onclick: function () {
+          if (!confirm('Delete this message permanently?')) return;
+          api('DELETE', '/api/admin/messages/' + m.id)
+            .then(function () { flash('Message deleted.'); viewMessages(page); refreshBadge(); }).catch(showErr);
+        } });
+        return [
+          fmt(m.createdAt), m.name,
+          el('a', { class: 'link', href: 'mailto:' + m.email, text: m.email }),
+          m.phone ? el('a', { class: 'link', href: 'tel:' + m.phone.replace(/[^0-9+]/g, ''), text: m.phone }) : '-',
+          m.enquiryType,
+          el('div', { class: 'pre', text: m.message }),
+          el('span', { class: 'pill ' + (m.reviewed ? 'ok' : 'new'), text: m.reviewed ? 'Reviewed' : 'New' }),
+          el('div', { class: 'actions' }, [toggle, del])
+        ];
+      });
+      var pager = el('div', { class: 'pager' }, [
+        el('button', { class: 'btn small outline', text: '← Newer', disabled: data.first, onclick: function () { viewMessages(page - 1); } }),
+        el('span', { class: 'muted', text: 'Page ' + (data.number + 1) + ' of ' + Math.max(data.totalPages, 1) }),
+        el('button', { class: 'btn small outline', text: 'Older →', disabled: data.last, onclick: function () { viewMessages(page + 1); } })
+      ]);
+      contentEl.replaceChildren(
+        el('div', { class: 'bar' }, [el('h2', { text: 'Contact Messages (' + data.totalElements + ')' })]),
+        rows.length ? table(['Received', 'Name', 'Email', 'Phone', 'Enquiry', 'Message', 'Status', 'Actions'], rows) : empty(),
+        pager
+      );
+    }).catch(showErr);
+  }
+
+  /* ---------- schedule / announcements / events ---------- */
+  var RES = {
+    schedules: {
+      title: 'Darshan & Pooja Schedule', path: '/api/admin/schedules',
+      fields: [
+        { name: 'displayOrder', label: 'Order (1 = first)', type: 'number', required: true, def: 1 },
+        { name: 'timeSlot', label: 'Time slot', type: 'text', required: true, max: 60, ph: '04:30–05:00 AM' },
+        { name: 'ritualName', label: 'Ritual name', type: 'text', required: true, max: 120 },
+        { name: 'visitorAccess', label: 'Visitor access', type: 'select', options: [['PUBLIC_ALLOWED', 'Public Allowed'], ['CLERGY_ONLY', 'Clergy Only'], ['TEMPLE_CLOSED', 'Temple Closed']] },
+        { name: 'details', label: 'Description (shown under the ritual name)', type: 'textarea', max: 1000 },
+        { name: 'active', label: 'Show on website', type: 'checkbox', def: true }
+      ],
+      cols: [['#', function (r) { return String(r.displayOrder); }], ['Time', function (r) { return r.timeSlot; }], ['Ritual', function (r) { return r.ritualName; }], ['Access', function (r) { return r.accessLabel; }], ['Visible', function (r) { return yes(r.active); }]]
+    },
+    announcements: {
+      title: 'Announcements', path: '/api/admin/announcements',
+      fields: [
+        { name: 'title', label: 'Title', type: 'text', required: true, max: 150 },
+        { name: 'content', label: 'Content', type: 'textarea', required: true, max: 2000 },
+        { name: 'important', label: 'Important (shown first)', type: 'checkbox', def: false },
+        { name: 'expiresAt', label: 'Hide after (optional)', type: 'datetime' },
+        { name: 'active', label: 'Show on website', type: 'checkbox', def: true }
+      ],
+      cols: [['Title', function (r) { return r.title; }], ['Content', function (r) { return trunc(r.content, 80); }], ['Published', function (r) { return fmt(r.publishedAt); }], ['Important', function (r) { return yes(r.important); }], ['Visible', function (r) { return yes(r.active); }]]
+    },
+    events: {
+      title: 'Events', path: '/api/admin/events',
+      fields: [
+        { name: 'title', label: 'Title', type: 'text', required: true, max: 150 },
+        { name: 'description', label: 'Description (optional)', type: 'textarea', max: 2000 },
+        { name: 'location', label: 'Location (optional)', type: 'text', max: 200 },
+        { name: 'startDateTime', label: 'Starts', type: 'datetime', required: true },
+        { name: 'endDateTime', label: 'Ends (optional)', type: 'datetime' },
+        { name: 'active', label: 'Show on website', type: 'checkbox', def: true }
+      ],
+      cols: [['Title', function (r) { return r.title; }], ['Starts', function (r) { return fmt(r.startDateTime); }], ['Location', function (r) { return r.location || ''; }], ['Visible', function (r) { return yes(r.active); }]]
+    }
+  };
+
+  function buildForm(cfg, row, onDone, onCancel) {
+    var inputs = {};
+    var labels = cfg.fields.map(function (f) {
+      var val = row ? row[f.name] : f.def, input;
+      if (f.type === 'textarea') { input = el('textarea', { rows: 3 }); input.value = val == null ? '' : val; if (f.max) input.maxLength = f.max; }
+      else if (f.type === 'select') {
+        input = el('select', {}, f.options.map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
+        input.value = val || f.options[0][0];
+      }
+      else if (f.type === 'checkbox') { input = el('input', { type: 'checkbox' }); input.checked = !!val; }
+      else if (f.type === 'datetime') { input = el('input', { type: 'datetime-local' }); input.value = val ? String(val).slice(0, 16) : ''; }
+      else if (f.type === 'number') { input = el('input', { type: 'number', min: 0 }); input.value = val == null ? '' : val; }
+      else { input = el('input', { type: 'text' }); input.value = val == null ? '' : val; if (f.max) input.maxLength = f.max; if (f.ph) input.placeholder = f.ph; }
+      input.required = !!f.required;
+      inputs[f.name] = input;
+      return f.type === 'checkbox'
+        ? el('label', { class: 'inline' }, [input, f.label])
+        : el('label', {}, [f.label, input]);
+    });
+    var save = el('button', { class: 'btn', type: 'submit', text: row ? 'Save changes' : 'Create' });
+    return el('form', { class: 'card edit', onsubmit: function (e) {
+      e.preventDefault();
+      var body = {};
+      cfg.fields.forEach(function (f) {
+        var i = inputs[f.name];
+        body[f.name] = f.type === 'checkbox' ? i.checked : f.type === 'number' ? Number(i.value) : f.type === 'datetime' ? (i.value || null) : i.value;
+      });
+      save.disabled = true;
+      api(row ? 'PUT' : 'POST', cfg.path + (row ? '/' + row.id : ''), body)
+        .then(function () { flash('Saved.'); onDone(); })
+        .catch(function (err) { showErr(err); save.disabled = false; });
+    } }, [el('h2', { text: row ? 'Edit' : 'Add new' })].concat(labels, [
+      el('div', { class: 'formbtns' }, [save, el('button', { class: 'btn outline', type: 'button', text: 'Cancel', onclick: onCancel })])
+    ]));
+  }
+
+  function viewCrud(key) {
+    var cfg = RES[key];
+    var formHost = el('div'), listHost = el('div');
+    function closeForm() { formHost.replaceChildren(); }
+    function openForm(row) { formHost.replaceChildren(buildForm(cfg, row, function () { closeForm(); load(); }, closeForm)); }
+    function load() {
+      api('GET', cfg.path).then(function (rows) {
+        var body = rows.map(function (r) {
+          var cells = cfg.cols.map(function (c) { return c[1](r); });
+          cells.push(el('div', { class: 'actions' }, [
+            el('button', { class: 'btn small outline', text: 'Edit', onclick: function () { openForm(r); window.scrollTo(0, 0); } }),
+            el('button', { class: 'btn small danger', text: 'Delete', onclick: function () {
+              if (!confirm('Delete this item permanently?')) return;
+              api('DELETE', cfg.path + '/' + r.id).then(function () { flash('Deleted.'); load(); }).catch(showErr);
+            } })
+          ]));
+          return cells;
+        });
+        listHost.replaceChildren(body.length ? table(cfg.cols.map(function (c) { return c[0]; }).concat(['Actions']), body) : empty());
+      }).catch(showErr);
+    }
+    contentEl.replaceChildren(
+      el('div', { class: 'bar' }, [el('h2', { text: cfg.title }), el('button', { class: 'btn small', text: '+ Add new', onclick: function () { openForm(null); } })]),
+      formHost, listHost
+    );
+    load();
+  }
+
+  /* ---------- site content (key / value) ---------- */
+  function viewContent() {
+    var formHost = el('div'), listHost = el('div');
+    function openForm(k, v) {
+      var key = el('input', { type: 'text', required: true, placeholder: 'e.g. schedule_note' });
+      key.value = k || ''; key.readOnly = !!k;
+      var val = el('textarea', { rows: 4 }); val.value = v || ''; val.maxLength = 5000; val.required = true;
+      formHost.replaceChildren(el('form', { class: 'card edit', onsubmit: function (e) {
+        e.preventDefault();
+        api('PUT', '/api/admin/content/' + encodeURIComponent(key.value.trim()), { value: val.value })
+          .then(function () { flash('Saved.'); formHost.replaceChildren(); load(); }).catch(showErr);
+      } }, [
+        el('h2', { text: k ? 'Edit content' : 'Add content' }),
+        el('label', {}, ['Key (lowercase letters, digits, _ - .)', key]),
+        el('label', {}, ['Text', val]),
+        el('div', { class: 'formbtns' }, [
+          el('button', { class: 'btn', type: 'submit', text: 'Save' }),
+          el('button', { class: 'btn outline', type: 'button', text: 'Cancel', onclick: function () { formHost.replaceChildren(); } })
+        ])
+      ]));
+    }
+    function load() {
+      api('GET', '/api/admin/content').then(function (map) {
+        var rows = Object.keys(map).map(function (k) {
+          return [k, el('div', { class: 'pre', text: map[k] }), el('div', { class: 'actions' }, [
+            el('button', { class: 'btn small outline', text: 'Edit', onclick: function () { openForm(k, map[k]); window.scrollTo(0, 0); } }),
+            el('button', { class: 'btn small danger', text: 'Delete', onclick: function () {
+              if (!confirm('Delete "' + k + '"?')) return;
+              api('DELETE', '/api/admin/content/' + encodeURIComponent(k)).then(function () { flash('Deleted.'); load(); }).catch(showErr);
+            } })
+          ])];
+        });
+        listHost.replaceChildren(rows.length ? table(['Key', 'Text', 'Actions'], rows) : empty());
+      }).catch(showErr);
+    }
+    contentEl.replaceChildren(
+      el('div', { class: 'bar' }, [el('h2', { text: 'Site Content' }), el('button', { class: 'btn small', text: '+ Add new', onclick: function () { openForm('', ''); } })]),
+      el('p', { class: 'muted', text: 'Tip: the key schedule_note changes the note under the Darshan table on the website.' }),
+      formHost, listHost
+    );
+    load();
+  }
+
+  /* ---------- start ---------- */
+  if (token) showDashboard(); else showLogin('');
+})();
+</script>
+</body>
+</html>
